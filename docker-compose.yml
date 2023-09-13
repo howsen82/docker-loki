@@ -1,0 +1,53 @@
+version: '3.9'
+
+services:
+  loki:
+    image: grafana/loki:latest
+    volumes:
+      - /home/serveradmin/docker_volumes/loki:/etc/loki
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki-config.yml
+    networks:
+      - loki
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - /var/log:/var/log
+      - /home/serveradmin/docker_volumes/promtail:/etc/promtail
+    # ports:
+    #   - "1514:1514" # this is only needed if you are going to send syslogs
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/promtail-config.yml
+    networks:
+      - loki
+
+  grafana:
+    image: grafana/grafana:latest
+    user: "1000"
+    volumes:
+    - /home/serveradmin/docker_volumes/grafana:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - loki
+
+networks:
+  loki:
+
+# docker-compose up -d --force-recreate # be sure you've created promtail-config.yml and loki-config.yml before running this
+# docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+# sudo nano /etc/docker/daemon.json
+# {
+#     "log-driver": "loki",
+#     "log-opts": {
+#         "loki-url": "http://localhost:3100/loki/api/v1/push",
+#         "loki-batch-size": "400"
+#     }
+# }
+# sudo systemctl restart docker
+
+# https://technotim.live/posts/grafana-loki/
